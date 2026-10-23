@@ -132,7 +132,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 	end,
 })
 
--- ===== Odin 전용 키맵: <leader>or = 실행, <leader>ob = 빌드, <leader>oc = 체크 =====
+-- ===== Odin 전용 키맵: <leader>or = 실행, <leader>os = 최적화 실행, <leader>ob = 빌드, <leader>oc = 체크 =====
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "odin",
 	callback = function(ev)
@@ -152,6 +152,7 @@ vim.api.nvim_create_autocmd("FileType", {
 			vim.keymap.set("n", keys, fn, { buffer = ev.buf, desc = desc })
 		end
 		map("<leader>or", function() run("odin run . -debug") end, "Odin: run")
+		map("<leader>os", function() run("odin run . -o:speed") end, "Odin: run (-o:speed 최적화)")
 		map("<leader>ob", function() run("odin build . -debug") end, "Odin: build")
 		map("<leader>oc", function() run("odin check . -strict-style") end, "Odin: check")
 	end,
