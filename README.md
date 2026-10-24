@@ -12,6 +12,7 @@ Odin 개발용 Neovim 설정입니다. 플러그인은 [lazy.nvim](https://githu
 | [Odin](https://odin-lang.org) | 컴파일러 (`odin run/build/check`) | `odin`이 PATH에 있어야 함 |
 | [ols](https://github.com/DanielGavin/ols) | Odin 언어 서버 (자동완성, 이동, 이름 변경) | `ols`, `odinfmt`가 PATH에 있거나 `D:/dev/ols/`에 있어야 함 |
 | [ripgrep](https://github.com/BurntSushi/ripgrep) | 텍스트 검색 (`<leader>fg`) | |
+| [codelldb](https://github.com/vadimcn/codelldb/releases) | 디버거 어댑터 (nvim-dap) | 아래 "codelldb 설치" 참고 |
 | C 컴파일러 | 없어도 됨 | blink.cmp는 미리 빌드된 바이너리를 받음 |
 | PowerShell 7 (Windows) | `:terminal`, `:!` 셸 | 없으면 기본 셸 사용 |
 
@@ -50,6 +51,31 @@ git clone https://github.com/kaeba0616/nvim-odin.git ~/.config/nvim
 `lua/plugins/lsp.lua`는 `ols`가 PATH에 있으면 그것을 쓰고, 없으면 `D:/dev/ols/ols.exe`를 씁니다. 다른 위치에 설치했다면 이 경로를 바꾸세요. `odinfmt` 경로도 같은 파일에 있습니다.
 
 프로젝트 루트는 `ols.json` 또는 `.git`이 있는 폴더로 잡힙니다.
+
+### codelldb 설치 (디버깅용)
+
+[codelldb 릴리스](https://github.com/vadimcn/codelldb/releases)에서 OS에 맞는 `.vsix`를 받아 nvim 데이터 폴더의 `codelldb`에 압축을 풉니다. `.vsix`는 zip 파일입니다. PATH에 `codelldb`가 있으면 그것을 먼저 사용합니다.
+
+**Windows** (`codelldb-win32-x64.vsix`)
+
+```powershell
+$d = "$env:LOCALAPPDATA\nvim-data\codelldb"
+New-Item -ItemType Directory -Force $d | Out-Null
+Invoke-WebRequest https://github.com/vadimcn/codelldb/releases/latest/download/codelldb-win32-x64.vsix -OutFile "$d\codelldb.zip"
+Expand-Archive -Force "$d\codelldb.zip" $d
+Remove-Item "$d\codelldb.zip"
+```
+
+**Linux** (x64 기준, macOS는 `codelldb-darwin-arm64.vsix` 등)
+
+```bash
+d=~/.local/share/nvim/codelldb
+mkdir -p "$d" && cd "$d"
+curl -L -o codelldb.vsix https://github.com/vadimcn/codelldb/releases/latest/download/codelldb-linux-x64.vsix
+unzip -o codelldb.vsix && rm codelldb.vsix
+```
+
+설치 후 `extension/adapter/codelldb(.exe)`가 있으면 됩니다.
 
 ## 설정 동기화
 
@@ -98,6 +124,30 @@ git pull
 | `<leader>q` | quickfix 창 열기/닫기 |
 
 저장할 때 `odinfmt`로 자동 포맷됩니다.
+
+### 디버깅 (nvim-dap + codelldb)
+
+Odin 파일에서 `F5`를 누르면 현재 작업 폴더(cwd)를 `odin build . -debug`로 빌드한 뒤 바로 디버깅을 시작합니다. 실행 파일 이름은 폴더 이름을 따릅니다. 빌드가 실패하면 오류가 quickfix 창에 나옵니다. 디버깅이 시작되면 변수, 호출 스택, 중단점 창(dap-ui)이 자동으로 열리고, 끝나면 닫힙니다.
+
+| 키 | 동작 |
+|---|---|
+| `F5` / `<leader>dc` | 디버깅 시작(빌드 포함) / 계속 |
+| `S-F5` / `<leader>dt` | 디버깅 종료 |
+| `F9` / `<leader>db` | 중단점 토글 |
+| `<leader>dB` | 조건부 중단점 (예: `i == 10`) |
+| `F10` / `<leader>dn` | 다음 줄 (step over) |
+| `F11` / `<leader>di` | 함수 안으로 (step into) |
+| `S-F11` / `<leader>do` | 함수 밖으로 (step out) |
+| `<leader>dC` | 커서 위치까지 실행 |
+| `<leader>dl` | 마지막 디버그 다시 실행 |
+| `<leader>dX` | 중단점 모두 삭제 |
+| `<leader>du` | 디버그 UI 열기/닫기 |
+| `<leader>de` | 커서 아래(또는 선택한) 식의 값 보기 |
+| `<leader>dr` | 디버그 REPL |
+
+다른 실행 파일을 디버깅하려면 디버깅 중이 아닐 때 `:DapNew`로 "Odin: 실행 파일 직접 선택"을 고르세요.
+
+Windows에서는 Odin 타입 표시가 일부 단순하게 보입니다. 예를 들어 slice는 `{data, len}`으로 나오고, 구조체 요약에서 문자열 필드가 빠질 수 있습니다. 변수 창에서 펼치거나 `<leader>de`로 `nums[0]`, `p.name`처럼 직접 확인하세요.
 
 ### 자동완성 (blink.cmp)
 
@@ -166,6 +216,7 @@ lazy-lock.json           플러그인 버전 고정
 lua/plugins/
   lsp.lua                ols, blink.cmp(자동완성), conform.nvim(odinfmt 포맷)
   oil.lua                파일 탐색기
+  dap.lua                디버거 (nvim-dap, dap-ui, codelldb)
   ui.lua                 tokyonight 테마, lualine, telescope, which-key
   icons.lua              nvim-web-devicons (Odin 아이콘 포함)
   autopairs.lua          괄호 자동 완성
